@@ -2,6 +2,7 @@ This is a skeleton proposal for a flask application that
 will integrate with Redux to provide qiskit based solvers
 for problems.
 
+## Getting Started
 To run this, create a python virtual environment and "enter" it
 
 ```
@@ -49,4 +50,4 @@ WARNING: This is a development server. Do not use it in a production deployment.
 Press CTRL+C to quit
 ```
 
-To interact with it, see the example `testdeutschclassical.py`
+To interact with it, see the example [`testdeutsch.py`](testdeutsch.py)
