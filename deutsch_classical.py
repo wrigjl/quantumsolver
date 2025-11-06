@@ -8,3 +8,10 @@ def solve(data) -> dict:
     '''
     result = "constant" if data[0] == data[1] else "balanced"
     return {'answer': result}
+
+if __name__ == "__main__":
+    assert solve([True, True])['answer'] == 'constant'
+    assert solve([False, False])['answer'] == 'constant'
+    assert solve([True, False])['answer'] == 'balanced'
+    assert solve([False, True])['answer'] == 'balanced'
+    print("All tests passed")
