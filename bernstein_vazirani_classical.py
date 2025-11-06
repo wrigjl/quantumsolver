@@ -4,7 +4,7 @@
        'f': [a list of integers, X, where 0 <= X < 2^N for which f(X) = true]}
 
     The goal is to find a binary string S of length N such that f(x) = S XOR x for
-    all x in 0..2^N -1. This solver assumes the promise that there is such an S.
+    all x in 0..2^N -1. There is a promise that there is such an S.
 '''
 
 def solve(data) -> dict:
@@ -16,7 +16,7 @@ def solve(data) -> dict:
     for i in data['f']:
         ftrue.add(i)
 
-    s = 0 
+    s = 0
     i = 1
     while i < top:
         if i in ftrue:
