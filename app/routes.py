@@ -2,7 +2,7 @@
 
 from flask import request
 from app import app
-import DeutschClassical
+import deutsch_classical
 import bernstein_vazirani_classical
 
 # pylint: disable=missing-function-docstring
@@ -13,14 +13,14 @@ def index():
     return "Welcom to the quantum solver."
 
 @app.route('/deutsch-classical', methods=['POST'])
-def deutschclassical():
+def solver_deutsch_classical():
     if not request.is_json:
         return "expected json input"
     data = request.json
-    return DeutschClassical.solve(data)
+    return deutsch_classical.solve(data)
 
 @app.route('/bernstein-vazirani-classical', methods=['POST'])
-def bz_classical():
+def solver_bz_classical():
     if not request.is_json:
         return "expected json input"
     data = request.json
