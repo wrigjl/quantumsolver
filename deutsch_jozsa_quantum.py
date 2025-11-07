@@ -1,5 +1,16 @@
 '''
 Deutsch-Jozsa problem quantum solver.
+
+In this problem the input is a function f:{0,1}^n -> {0,1} which is either
+constant (all outputs are the same) or balanced (half the outputs are 0, half
+are 1).
+
+The input to this solver is a dictionary:
+    {'nbits': N,
+     'values': [a list of integers, X, where 0 <= X < 2^N for which f(X) = true]}
+
+The result is a dictionary:
+    {'answer': 'constant' or 'balanced'}
 '''
 
 from qiskit import QuantumCircuit
