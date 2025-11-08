@@ -26,14 +26,10 @@ def solve(data) -> dict:
     Each entry is either true or false. The first number represents
     f(false), and the second represents f(true)
     """
-    if data[0] and data[1]:
-        f = f1
-    elif not data[0] and not data[1]:
-        f = f2
-    elif not data[0] and data[1]:
-        f = f3
-    else:
-        f = f4
+
+    def f(x: bool) -> bool:
+        """This is the hidden function f we are trying to analyze"""
+        return data[1] if x else data[0]
 
     # f has been defined. Now we treat it as a black box.
     # Past this point, we pretend that we don't know which function

@@ -20,7 +20,7 @@ def solve(data) -> dict:
     # about f and we try to determine S.
 
     s = 0
-    for i in (2**p for p in range(nbits)):
+    for i in (1 << p for p in range(nbits)):
         if f(i):
             s |= i
 
