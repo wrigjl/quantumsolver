@@ -12,9 +12,16 @@ def solve(data) -> dict:
     nbits = data["nbits"]
     ftrue = set(data["f"])
 
+    def f(x: int) -> bool:
+        return x in ftrue
+
+    # f has been defined, now we treat it as a black box.
+    # Past this point, we pretend that we don't know anything
+    # about f and we try to determine S.
+  
     s = 0
     for i in (2**p for p in range(nbits)):
-        if i in ftrue:
+        if f(i):
             s |= i
 
     result = f"{s:b}".zfill(nbits)
