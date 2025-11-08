@@ -15,7 +15,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        RootCommand rootCommand = new("Parameter binding example") {
+        RootCommand rootCommand = new("Deutsch Endpoint Tester") {
             new Option<string>("--baseurl")
             {
                 Description = "The endpoint base url.",
@@ -23,7 +23,7 @@ class Program
             },
             new Option<string>("--endpoint")
             {
-                Description = "The endpoint base url.",
+                Description = "The endpoint name.",
                 DefaultValueFactory = (x) => "deutsch-classical",
             },
         };
