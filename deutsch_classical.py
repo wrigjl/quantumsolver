@@ -20,8 +20,8 @@ def solve(data: list) -> dict:
 
 
 if __name__ == "__main__":
-    assert solve([True, True])["answer"] == "constant"
-    assert solve([False, False])["answer"] == "constant"
-    assert solve([True, False])["answer"] == "balanced"
-    assert solve([False, True])["answer"] == "balanced"
+    assert solve([1, 1])["answer"] == "constant"
+    assert solve([0, 0])["answer"] == "constant"
+    assert solve([1, 0])["answer"] == "balanced"
+    assert solve([0, 1])["answer"] == "balanced"
     print("All tests passed")
