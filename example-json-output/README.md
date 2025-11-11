@@ -10,5 +10,6 @@ import json
 
 with open("example-deutsch.json") as f:
     obj = json.load(f)
-print(obj["solution"]["circuit"]
+
+print(obj["solution"]["circuit"])
 ```
