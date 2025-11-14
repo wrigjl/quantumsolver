@@ -4,21 +4,22 @@ Deutsch Quantum Solver
 Input - list
 Representing the states of 2 bits
 [0,0], [0,1], [1,0], [1,1]
-TODO: Coordinate how Problem group will send oracle
-Code will need to be modified based on that
 
 
 Output - dictionary
 {'answer': 'constant' or 'balanced'}
 TODO: Coordinate what information Visualization group needs,
 Possible to send quantum circuit to them.
+Send information via QASM
 """
 
 import io
 import base64
+import argparse
 import matplotlib.pyplot as plt
-from qiskit import QuantumCircuit, transpile
+from qiskit import QuantumCircuit, qasm2 ,transpile
 from qiskit_aer import AerSimulator
+
 
 def deutsch_function(case: int) -> QuantumCircuit:
     """
@@ -60,18 +61,26 @@ def compile_circuit(function: QuantumCircuit) -> QuantumCircuit:
 
     return qc
 
-def deutsch_algorithm(function: QuantumCircuit) -> dict:
+def deutsch_algorithm(function: QuantumCircuit) -> tuple[dict, QuantumCircuit]:
     """
-    Runs the compiled circuit (with oracle) in the Qiskit simulator
-    Returns constant if measurements are the same
-    Returns balanced if measurements are opposite
+    Runs the compiled circuit (with oracle) in the Qiskit simulator.
+
+    Returns:
+        (result_dict, qc)
+        result_dict: {'answer': 'constant' or 'balanced'}
+        qc: the QuantumCircuit that was executed
     """
     qc = compile_circuit(function)
-
     result = AerSimulator().run(qc, shots=1, memory=True).result()
     measurements = result.get_memory()
     answer = "constant" if measurements[0] == '0' else "balanced"
-    return {"answer": answer}
+    return {"answer": answer}, qc
+
+def export_QASM(qc: QuantumCircuit) -> str:
+    """
+    Export a Qiskit circuit to QASM
+    """
+    return qasm2.dumps(qc)
 
 def circuit_png_base64(qc: QuantumCircuit) -> str:
     """
@@ -90,8 +99,14 @@ def solve(data: list) -> dict:
     """
     Main entry point
     Determine which case is given by the input
+
+    Returns a JSON-ready dictionary with:
+    {
+        "answer": "...",
+        "qasm" : "..."    
+    }
     """
-    
+    # Determine oracle
     if data[0]:
         if data[1]:
             f = deutsch_function(4)  # [1, 1] f4
@@ -102,13 +117,45 @@ def solve(data: list) -> dict:
             f = deutsch_function(2)  # [0, 1] f2
         else:
             f = deutsch_function(1)  # [0, 0] f1 
-    return(deutsch_algorithm(f))
+
+    # Run algorithm
+    result, qc = deutsch_algorithm(f)
+
+    # Attach QASM circuit
+    result["qasm"] = export_QASM(qc)
+
+    return result
 
 
 if __name__ == "__main__":
-    assert solve([0, 0])["answer"] == "constant"
-    assert solve([1, 1])["answer"] == "constant"
-    assert solve([0, 1])["answer"] == "balanced"
-    assert solve([1, 0])["answer"] == "balanced"
+    """
+    Internal testing + optional ASCII and QASM visualization
+    python deutsch_quantum.py --show-circuits
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--show-circuits", action="store_true")
+    args = parser.parse_args()
+
+    # Run tests via solve
+    assert solve([0, 0])["answer"] == "constant"  # f1
+    assert solve([0, 1])["answer"] == "balanced"  # f2
+    assert solve([1, 0])["answer"] == "balanced"  # f3
+    assert solve([1, 1])["answer"] == "constant"  # f4
     print("All tests passed")
+
+    # Optional debugging display
+    if args.show_circuits:
+        print("\n--- Debug: Showing All 4 Oracle Circuits ---\n")
+
+        for case in [1, 2, 3, 4]:
+            f = deutsch_function(case)
+            result, qc = deutsch_algorithm(f)
+
+            print(f"Oracle f{case}:")
+            print(qc.draw())
+            print("Answer:", result["answer"])
+            print("QASM snippet:")
+            print(export_QASM(qc)[:200], "...\n")
+
+
 
