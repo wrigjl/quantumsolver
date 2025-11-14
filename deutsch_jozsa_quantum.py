@@ -13,7 +13,8 @@ The result is a dictionary:
     {'answer': 'constant' or 'balanced'}
 """
 
-from qiskit import QuantumCircuit
+import argparse
+from qiskit import QuantumCircuit, qasm2
 from qiskit_aer import AerSimulator
 
 
@@ -23,7 +24,7 @@ def dj_algorithm(function: QuantumCircuit):
     qc = compile_circuit(function)
     result = AerSimulator().run(qc, shots=1, memory=True).result()
     measurements = result.get_memory()
-    return "balanced" if "1" in measurements[0] else "constant"
+    return ("balanced", qc) if "1" in measurements[0] else ("constant", qc)
 
 
 def compile_circuit(function: QuantumCircuit):
@@ -86,15 +87,30 @@ def solve(data) -> dict:
     else:
         func = dj_balanced(nbits, values)
 
-    answer = dj_algorithm(func)
-    return {"answer": answer}
+    (answer, qc) = dj_algorithm(func)
+    return {"answer": answer, "qasm": qasm2.dumps(qc)}
+
+
+def testit(data, expected, show_circuits=False):
+    """Test the deutsch-jozsa solver with given data and expected result."""
+    result = solve(data)
+    assert (
+        result["answer"] == expected
+    ), f"expected {expected}, got {result['answer']} for {data}"
+    if show_circuits:
+        print(f"Deutsch-Jozsa circuit for input {data}:")
+        print(result["qasm"])
 
 
 if __name__ == "__main__":
-    assert solve({"nbits": 3, "values": []})["answer"] == "constant"
-    assert (
-        solve({"nbits": 3, "values": [0, 1, 2, 3, 4, 5, 6, 7]})["answer"] == "constant"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--show-circuits", action="store_true")
+    args = parser.parse_args()
+
+    testit({"nbits": 3, "values": []}, "constant", args.show_circuits)
+    testit(
+        {"nbits": 3, "values": [0, 1, 2, 3, 4, 5, 6, 7]}, "constant", args.show_circuits
     )
-    assert solve({"nbits": 3, "values": [1, 3, 4, 6]})["answer"] == "balanced"
-    assert solve({"nbits": 3, "values": [1, 2, 4, 7]})["answer"] == "balanced"
+    testit({"nbits": 3, "values": [1, 3, 4, 6]}, "balanced", args.show_circuits)
+    testit({"nbits": 3, "values": [1, 2, 4, 7]}, "balanced", args.show_circuits)
     print("All tests passed")
