@@ -13,6 +13,7 @@
 
 import argparse
 import json
+import requests
 from qiskit import QuantumCircuit, qasm2
 from qiskit_aer import AerSimulator
 import deutsch_jozsa_quantum
@@ -71,10 +72,17 @@ def generate_all(nbits):
         yield generate(nbits, s)
 
 
-def tryit(nbits, ftrue, expected_s, show_circuits=False):
+def tryit(url, nbits, ftrue, expected_s, show_circuits=False):
     """Helper function to test the solver."""
 
-    solution = solve({"nbits": nbits, "f": list(ftrue)})
+    data = {"nbits": nbits, "f": list(ftrue)}
+    if url is None:
+        solution = solve({"nbits": nbits, "f": list(ftrue)})
+    else:
+
+        req = requests.post(url, json=data, timeout=5)
+        solution = req.json()
+
     answer = solution["answer"]
     assert answer == expected_s, \
         f"Failed for nbits={nbits}, ftrue={ftrue}, expected_s={expected_s}, got {answer}"
@@ -100,14 +108,30 @@ def main():
         action="store_true",
         help="Show the generated quantum circuits during tests.",
     )
+    parser.add_argument(
+        "--baseurl",
+        type=str,
+        default=None,
+        help="Base URL for the quantum solver server.",
+    )
+    parser.add_argument(
+        "--endpoint",
+        type=str,
+        default="bernstein-vazirani-quantum",
+        help="Endpoint for the quantum solver.",
+    )
     args = parser.parse_args()
 
     # if we're not generating a problem, run tests
+    fullurl = None
+    if args.baseurl is not None:
+        fullurl = f"{args.baseurl}/{args.endpoint}"
+
     if args.generate is None:
-        tryit(3, [1, 3, 4, 6], "101", args.show_circuits)
-        tryit(3, [1, 2, 4, 7], "111", args.show_circuits)
-        tryit(3, [],  "000", args.show_circuits)
-        tryit(3, [1, 3, 5, 7], "001", args.show_circuits)
+        tryit(fullurl, 3, [1, 3, 4, 6], "101", args.show_circuits)
+        tryit(fullurl, 3, [1, 2, 4, 7], "111", args.show_circuits)
+        tryit(fullurl, 3, [],  "000", args.show_circuits)
+        tryit(fullurl, 3, [1, 3, 5, 7], "001", args.show_circuits)
         print("All tests passed")
         return
 
