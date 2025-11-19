@@ -1,5 +1,8 @@
 """This is a classical solver for the Deutsch problem"""
 
+import argparse
+import requests
+
 
 def solve(data: list) -> dict:
     """We expect the incoming json schema to be a list of length two.
@@ -22,9 +25,51 @@ def solve(data: list) -> dict:
     return {"answer": result}
 
 
+def tryit(url, data, expected):
+    """Helper function to test the solver."""
+
+    if url is None:
+        solution = solve(data)
+    else:
+        req = requests.post(url, json=data, timeout=5)
+        solution = req.json()
+
+    answer = solution["answer"]
+    assert (
+        answer == expected
+    ), f"Failed for data={data}, expected={expected}, got {answer}"
+
+
+def main():
+    """Main function to run the tests locally or on a server."""
+    parser = argparse.ArgumentParser(description="Deutsch Classical Solver")
+    parser.add_argument(
+        "--baseurl",
+        type=str,
+        default=None,
+        help="Base URL for the quantum solver to test against.",
+    )
+    parser.add_argument(
+        "--endpoint",
+        type=str,
+        default="deutsch-classical",
+        help="Endpoint for the classical solver.",
+    )
+
+    args = parser.parse_args()
+    url = None
+    if parser.parse_args().baseurl is not None:
+        url = f"{args.baseurl}/{args.endpoint}"
+
+    tryit(url, [0, 0], "constant")
+    tryit(url, [0, 1], "balanced")
+    tryit(url, [1, 0], "balanced")
+    tryit(url, [1, 1], "constant")
+
+    if url is None:
+        url = "local"
+    print(f"All tests passed ({url})")
+
+
 if __name__ == "__main__":
-    assert solve([1, 1])["answer"] == "constant"
-    assert solve([0, 0])["answer"] == "constant"
-    assert solve([1, 0])["answer"] == "balanced"
-    assert solve([0, 1])["answer"] == "balanced"
-    print("All tests passed")
+    main()
