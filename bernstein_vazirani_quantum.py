@@ -1,6 +1,6 @@
 """The input to this solver is a json schema:
 {'nbits': N,
- 'f': [a list of integers, X, where 0 <= X < 2^N for which f(X) = true]}
+ 'f': [a list of bits (0's and 1's) where f[x] is f(x)]}
 
  This uses a quantum algorithm to find a binary string S of length N such that
   f(x) = S XOR x for all x in 0..2^N
@@ -40,10 +40,12 @@ def bv_algorithm(function: QuantumCircuit):
 def solve(data) -> dict:
     """returns the answer as a binary string"""
     nbits = data["nbits"]
-    ftrue = set(data["f"])
+    fbits = [bool(x) for x in data["f"]]
 
     def f(x: int) -> bool:
-        return x in ftrue
+        if x < 0 or x >= len(fbits):
+            return False
+        return fbits[x]
 
     bit_string = ["1" if f(1 << i) else "0" for i in range(nbits)]
     bit_string = "".join(reversed(bit_string))
@@ -84,11 +86,13 @@ def tryit(url, nbits, ftrue, expected_s, show_circuits=False):
         solution = req.json()
 
     answer = solution["answer"]
-    assert answer == expected_s, \
-        f"Failed for nbits={nbits}, ftrue={ftrue}, expected_s={expected_s}, got {answer}"
+    assert (
+        answer == expected_s
+    ), f"Failed for nbits={nbits}, ftrue={ftrue}, expected_s={expected_s}, got {answer}"
     if show_circuits:
         print(f"// Bernstein-Vazirani circuit for nbits={nbits}, s={expected_s}:")
         print(solution["qasm"])
+
 
 def main():
     """Main function to either run tests or generate problem instances."""
@@ -128,10 +132,10 @@ def main():
         fullurl = f"{args.baseurl}/{args.endpoint}"
 
     if args.generate is None:
-        tryit(fullurl, 3, [1, 3, 4, 6], "101", args.show_circuits)
-        tryit(fullurl, 3, [1, 2, 4, 7], "111", args.show_circuits)
-        tryit(fullurl, 3, [],  "000", args.show_circuits)
-        tryit(fullurl, 3, [1, 3, 5, 7], "001", args.show_circuits)
+        tryit(fullurl, 3, [0, 1, 0, 1, 1, 0, 1, 0], "101", args.show_circuits)
+        tryit(fullurl, 3, [0, 1, 1, 0, 1, 0, 0, 1], "111", args.show_circuits)
+        tryit(fullurl, 3, [1, 0, 0, 1, 0, 1, 1, 0], "000", args.show_circuits)
+        tryit(fullurl, 3, [0, 1, 0, 1, 0, 1, 0, 1], "001", args.show_circuits)
         if fullurl is None:
             fullurl = "local"
         print(f"All tests passed ({fullurl})")

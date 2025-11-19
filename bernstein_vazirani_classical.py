@@ -1,6 +1,8 @@
 """The input to this solver is a json schema:
   {'nbits': N,
-   'f': [a list of integers, X, where 0 <= X < 2^N for which f(X) = true]}
+   'f': [a list of bits 0 or 1 where f[x] represents f(x)]}
+
+note: len(f) == 2^nbits
 
 The goal is to find a binary string S of length N such that f(x) = S XOR x for
 all x in 0..2^N -1. There is a promise that there is such an S.
@@ -10,10 +12,12 @@ all x in 0..2^N -1. There is a promise that there is such an S.
 def solve(data) -> dict:
     """returns the answer as a binary string"""
     nbits = data["nbits"]
-    ftrue = set(data["f"])
+    fbits = [bool(x) for x in data["f"]]
 
     def f(x: int) -> bool:
-        return x in ftrue
+        if x >= len(fbits) or x < 0:
+            return False
+        return fbits[x]
 
     # f has been defined, now we treat it as a black box.
     # Past this point, we pretend that we don't know anything
@@ -29,8 +33,8 @@ def solve(data) -> dict:
 
 
 if __name__ == "__main__":
-    assert solve({"nbits": 3, "f": [1, 3, 4, 6]})["answer"] == "101"
-    assert solve({"nbits": 3, "f": [1, 2, 4, 7]})["answer"] == "111"
-    assert solve({"nbits": 3, "f": []})["answer"] == "000"
-    assert solve({"nbits": 3, "f": [1, 3, 5, 7]})["answer"] == "001"
+    assert solve({"nbits": 3, "f": [0, 1, 0, 1, 1, 0, 1, 0]})["answer"] == "101"
+    assert solve({"nbits": 3, "f": [0, 1, 1, 0, 1, 0, 0, 1]})["answer"] == "111"
+    assert solve({"nbits": 3, "f": [1, 0, 0, 1, 0, 1, 1, 0]})["answer"] == "000"
+    assert solve({"nbits": 3, "f": [0, 1, 0, 1, 0, 1, 0, 1]})["answer"] == "001"
     print("All tests passed")
