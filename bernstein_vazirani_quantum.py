@@ -13,6 +13,7 @@
 
 import argparse
 import json
+import math
 import requests
 from qiskit import QuantumCircuit, qasm2
 from qiskit_aer import AerSimulator
@@ -49,10 +50,32 @@ def bv_algorithm(function: QuantumCircuit):
     return (result.get_memory()[0], qc)
 
 
+def power_of_two_info(n):
+    """Determine whether n is a power of 2 and which one"""
+    if n <= 0:
+        return False, None
+
+    # A number is a power of two if it has exactly one bit set
+    if (n & (n - 1)) == 0:
+        # log2 gives the exponent
+        power = int(math.log2(n))
+        return True, power
+    return False, None
+
+
 def solve(data) -> dict:
     """returns the answer as a binary string"""
-    nbits = data["nbits"]
-    fbits = [bool(x) for x in data["f"]]
+
+    if isinstance(data, list):
+        fbits = [bool(x) for x in data]
+        ispower2, nbits = power_of_two_info(len(fbits))
+        if not ispower2:
+            return {"answer": "function length is not power of 2"}
+    else:
+        nbits = data["nbits"]
+        fbits = [bool(x) for x in data["f"]]
+        if 2**nbits != len(fbits):
+            return {"answer": f"invalid function length {len(fbits)} != 2^nbits {2**nbits}"}
 
     def f(x: int) -> bool:
         if x < 0 or x >= len(fbits):
@@ -89,9 +112,31 @@ def generate_all(nbits):
 def tryit(url, nbits, ftrue, expected_s, show_circuits=False):
     """Helper function to test the solver."""
 
+    tryit_oldstyle(url, nbits, ftrue, expected_s, show_circuits)
+
+    data = ftrue
+    if url is None:
+        solution = solve(data)
+    else:
+
+        req = requests.post(url, json=data, timeout=5)
+        solution = req.json()
+
+    answer = solution["answer"]
+    assert (
+        answer == expected_s
+    ), f"Failed for nbits={nbits}, ftrue={ftrue}, expected_s={expected_s}, got {answer}"
+    if show_circuits:
+        print(f"// Bernstein-Vazirani circuit for nbits={nbits}, s={expected_s}:")
+        print(solution["qasm"])
+
+
+def tryit_oldstyle(url, nbits, ftrue, expected_s, show_circuits=False):
+    """Helper function to test the solver."""
+
     data = {"nbits": nbits, "f": list(ftrue)}
     if url is None:
-        solution = solve({"nbits": nbits, "f": list(ftrue)})
+        solution = solve(data)
     else:
 
         req = requests.post(url, json=data, timeout=5)
