@@ -12,7 +12,7 @@ import deutsch_jozsa_quantum
 @app.route('/')
 @app.route('/index')
 def index():
-    return "Welcom to the quantum solver."
+    return "Welcome to the quantum solver."
 
 @app.route('/deutsch-classical', methods=['POST'])
 def solver_deutsch_classical():
