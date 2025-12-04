@@ -5,15 +5,20 @@ In this problem the input is a function f:{0,1}^n -> {0,1} which is either
 constant (all outputs are the same) or balanced (half the outputs are 0, half
 are 1).
 
-The input to this solver is a dictionary:
+The input to this solver is either a list:
+    [0, 1, 0, 1, ...]
+  list[i] represents f(i) and must be a power of 2 in size
+
+OR, the input can be a dictionary:
     {'nbits': N,
-     'values': [a list of integers, X, where 0 <= X < 2^N for which f(X) = true]}
+     'values': [a list of integers of length 2^N, values[i] represents f(i)]}
 
 The result is a dictionary:
-    {'answer': 'constant' or 'balanced'}
+    {'answer': 'constant' or 'balanced', or an error message}
 """
 
 import argparse
+import math
 import requests
 from qiskit import QuantumCircuit, qasm2
 from qiskit_aer import AerSimulator
@@ -72,15 +77,40 @@ def dj_balanced(num_qubits, fbits):
     return qc
 
 
+def power_of_two_info(n):
+    """Determine if n is a power of 2 and if so, which power of 2."""
+    if n <= 0:
+        return False, None
+
+    # A number is a power of two if it has exactly one bit set
+    if (n & (n - 1)) == 0:
+        # log2 gives the exponent
+        power = int(math.log2(n))
+        return True, power
+    return False, None
+
+
 def solve(data) -> dict:
     """Solves the Deutsch-Jozsa problem for the given function data.
-    The input data is a json schema:
+    The input data is a json schema like this (old style):
     {'nbits': N,
      'f': [list of integers of length 2^nbits: f[x] = f(x) = {0, 1}}
+    or (new style): just a list [0, 1, ...] where the position i is f(i)
     """
 
-    nbits = data["nbits"]
-    fbits = [bool(x) for x in data["f"]]
+    if isinstance(data, list):
+        # If we're given just a list, assume it is f's values
+        fbits = [bool(x) for x in data]
+        ispower2, nbits = power_of_two_info(len(fbits))
+        if not ispower2:
+            return {"answer": "invalid function length, need power of 2"}
+    else:
+        nbits = data["nbits"]
+        fbits = [bool(x) for x in data["f"]]
+        if 2**nbits != len(fbits):
+            return {
+                "answer": f"invalid function length {len(fbits)} != 2^nbits {2**nbits}"
+            }
 
     if sum(fbits) == 0:
         func = dj_constant(nbits, output=False)
@@ -137,6 +167,13 @@ def main():
     if args.baseurl is not None:
         url = f"{args.baseurl}/{args.endpoint}"
 
+    # new style tests
+    testit(url, [0, 0, 0, 0, 0, 0, 0, 0], "constant", args.show_circuits)
+    testit(url, [1, 1, 1, 1, 1, 1, 1, 1], "constant", args.show_circuits)
+    testit(url, [0, 1, 0, 1, 1, 0, 1, 0], "balanced", args.show_circuits)
+    testit(url, [0, 1, 1, 0, 1, 0, 0, 1], "balanced", args.show_circuits)
+
+    # old style tests
     testit(
         url, {"nbits": 3, "f": [0, 0, 0, 0, 0, 0, 0, 0]}, "constant", args.show_circuits
     )
@@ -145,17 +182,16 @@ def main():
     )
     testit(
         url,
-        {"nbits": 3, "f": [0, 1, 0, 1, 1, 0, 1, 1, 0]},
+        {"nbits": 3, "f": [0, 1, 0, 1, 1, 0, 1, 0]},
         "balanced",
         args.show_circuits,
     )
     testit(
         url,
-        {"nbits": 3, "f": [0, 1, 1, 0, 1, 0, 0, 0, 1]},
+        {"nbits": 3, "f": [0, 1, 1, 0, 1, 0, 0, 1]},
         "balanced",
         args.show_circuits,
     )
-
     if url is None:
         url = "local"
     print(f"All tests passed ({url})")
